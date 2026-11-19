@@ -72,12 +72,13 @@ def L(P,co=0):
   U(P)
  return r
 def E(P):
- b=P[0];s=0
+ b=P[0];s=0;c=[0,0]
  for i,v in enumerate(b):
   if v:
-   a=abs(v);r=i>>4
+   a=abs(v);r=i>>4;c[v>0]+=a==3
    w=V[a]+(10*(r if v>0 else 7-r)if a==1 else(14-abs(7-2*(i&7))-abs(7-2*r))*(4 if a==2 else 1)//2 if 1<a<6 else 0)
    s+=w if v>0 else-w
+ s+=25*((c[1]>1)-(c[0]>1))
  return s*P[1]
 def O(P,ms):
  b=P[0]
