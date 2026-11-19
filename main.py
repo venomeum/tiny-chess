@@ -1,132 +1,43 @@
-V=[0,100,320,330,500,900,0];N=[-33,-31,-18,-14,14,18,31,33]
-W=[-17,-16,-15,-1,1,15,16,17];B=[-17,-15,15,17];R=[-16,-1,1,16]
-ST='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -'
-CM={0:13,4:12,7:14,112:7,116:3,119:11};I=10**9;NC=16000;nd=[0,0]
-def F(f):
- p=f.split();b=[0]*128;r=7;c=0
- for ch in p[0]:
-  if ch=='/':r-=1;c=0
-  elif ch.isdigit():c+=int(ch)
-  else:b[r*16+c]=("PNBRQK".index(ch.upper())+1)*(1-(ch>'Z')*2);c+=1
- k=sum(1<<"KQkq".find(ch)for ch in p[2]if ch in"KQkq")
- e=(int(p[3][1])-1)*16+ord(p[3][0])-97 if p[3]!='-'else-1
- return[b,(p[1]=='w')*2-1,k,e,[]]
-def A(b,s,x):
- for ds,pv in(((-15*x,-17*x),1),(N,2),(W,6)):
-  for d in ds:
-   y=s+d
-   if not y&0x88 and b[y]==pv*x:return 1
- for d in W:
-  y=s+d
-  while not y&0x88:
-   v=b[y]
-   if v:
-    if v in(5*x,(3 if d in B else 4)*x):return 1
-    break
-   y+=d
- return 0
-def M(P,co=0):
- b=P[0];t=P[1];ms=[];ap=ms.append
- for s,v in enumerate(b):
-  if v*t<=0:continue
-  a=abs(v)
-  if a==1:
-   d=16*t
-   for y in(s+d,s+d-1,s+d+1):
-    if y&0x88:continue
-    z=y==s+d
-    if z and b[y]:continue
-    if not z and not(b[y]*t<0 or y==P[3]):continue
-    if y>>4 in(0,7):
-     for q in(5,4,3,2):ap(s|y<<7|q<<14)
-    elif not z or not co:
-     ap(s|y<<7)
-     if z and(s>>4)==(1 if t>0 else 6)and not b[s+2*d]:ap(s|(s+2*d)<<7)
-  else:
-   for d in(N if a==2 else B if a==3 else R if a==4 else W):
-    y=s+d
-    while not y&0x88:
-     q=b[y]
-     if q*t<0 or(not q and not co):ap(s|y<<7)
-     if q:break
-     if a in(2,6):break
-     y+=d
-   if a==6 and not co and s==(4 if t==1 else 116)and not A(b,s,-t):
-    for sg,bt in((1,1 if t==1 else 4),(-1,2 if t==1 else 8)):
-     if P[2]&bt and b[s+(3 if sg>0 else 4)*sg]==4*t and not(b[s+sg]or b[s+2*sg]or(sg<0 and b[s-3])or A(b,s+sg,-t)or A(b,s+2*sg,-t)):ap(s|(s+2*sg)<<7)
- return ms
-def D(P,m):
- b=P[0];f=m&127;y=(m>>7)&127;q=(m>>14)&7;v=b[f];cp=b[y];cs=y
- if abs(v)==1 and y==P[3]and not cp and f&7!=y&7:cs=y-16*P[1];cp=b[cs]
- P[4].append((b,P[2],P[3]));c=b[:];c[f]=0;c[cs]=0;c[y]=q*P[1]if q else v
- if abs(v)==6 and abs(y-f)==2:
-  rf=(f&112)+(7 if y>f else 0);c[(f+y)//2]=c[rf];c[rf]=0
- P[0]=c;P[2]&=CM.get(f,15)&CM.get(y,15);P[3]=f+16*P[1]if abs(v)==1 and abs(y-f)==32 else-1;P[1]=-P[1]
-def U(P):
- P[0],P[2],P[3]=P[4].pop();P[1]=-P[1]
-def L(P,co=0):
- r=[]
- for m in M(P,co):
-  D(P,m)
-  if not A(P[0],P[0].index(-6*P[1]),P[1]):r.append(m)
-  U(P)
- return r
-def E(P):
- b=P[0];s=0;c=[0,0]
- for i,v in enumerate(b):
-  if v:
-   a=abs(v);r=i>>4;c[v>0]+=a==3
-   w=V[a]+(10*(r if v>0 else 7-r)if a==1 else(14-abs(7-2*(i&7))-abs(7-2*r))*(4 if a==2 else 1)//2 if 1<a<6 else 0)
-   s+=w if v>0 else-w
- s+=25*((c[1]>1)-(c[0]>1))
- return s*P[1]
-def O(P,ms):
- b=P[0]
- def k(m):
-  y=(m>>7)&127;q=(m>>14)&7;vc=abs(b[y])or y==P[3]
-  return(9000+V[q]if q else 0)+(10000+V[vc]*16-abs(b[m&127])if vc else 0)
- return sorted(ms,key=k)[::-1]
-def S(P,d,a,be,pl):
- nd[0]+=1
- if nd[1]or nd[0]>NC:nd[1]=1;return 0
- if d<=0:
-  a=max(a,E(P))
-  if a>=be:return be
- ms=L(P,1 if d<=0 else 0)
- if not ms:
-  if d>0:return-100000+pl if A(P[0],P[0].index(6*P[1]),-P[1])else 0
-  return a
- bs=a if d<=0 else-I
- for m in O(P,ms):
-  D(P,m);sc=-S(P,d-1,-be,-a,pl+1);U(P)
-  if nd[1]:return 0
-  bs=max(bs,sc);a=max(a,sc)
-  if a>=be:break
- return bs
-def Z(P):
- ms=L(P)
- if not ms:return None
- if len(ms)==1:return ms[0]
- nd[0]=0;nd[1]=0;bs=ms[0];d=0
- while d<5:
-  d+=1;a=-I;cur=bs
-  for m in O(P,ms):
-   D(P,m);sc=-S(P,d-1,-I,-a,1);U(P)
-   if nd[1]:break
-   if sc>a:a=sc;cur=m
-  else:bs=cur
-  if nd[1]:break
- return bs
-def mu(m):
- def n(s):return chr(97+s%8)+chr(49+s//16)
- q=(m>>14)&7;return n(m&127)+n((m>>7)&127)+('nbrq'[q-2]if q else'')
-def choose_move(board,history=None,time_left=None,color=None):
- P=F(board)if board else F(ST)
- m=Z(P);return mu(m)if m is not None else''
-def env():
- import json,os,urllib.request as ur
- u=os.environ['MAKEFUN_ENV_URL']
- post=lambda p,pl:json.load(ur.urlopen(u+p,json.dumps(pl).encode()))
- g=post('/game',{})
- while g.get('status')!='done':g=post('/move',{'game':g['game'],'move':choose_move(g['fen'])})
-if __name__=='__main__':env()
+import lzma,base64
+exec(lzma.decompress(base64.b85decode(
+b'{Wp48S^xk9=GL@E0stWa8~^|S5YJf5;1nnccU=H04@YAm1VH@=&UW8ez%qUT{l@)OD0Od8@I759I'
+b'+)HYvJdnxMBRE32U8P@sF_XsxUBEc3H3kBwW`KcnkCX%Y#G3-{Vpqde8-LIqr9cu!~2=13)!>}R+'
+b'KX^Ui2=N?((KP^;sKi1VV;sYe6R6L=m6K)*cpGsms0dG)ne@wY!!XZ*(GkS8j9E&UcTJ1#h=VfwN'
+b'Z5hIDk*2nMQ6yQuwwTmq|ec=R&-QztU0Y2I#!p>iG8IM_NJIeS~STQGjEcW1bL&3L(fv@h=EJ&Y?'
+b'CuNSabcmqvhEBW2KDO+=Jt+k#b2;N;2m*DST0afC=@o2{eW7DICAVAPtTrt}9idu^y?Sqvmvo~-%'
+b'3wEpK|4POl;|{ppBdNl@ONmy(RIL2poJA516$5SOc*1aN-u5!6W~lB-={Y)LFK}N)K@wxu>ZhN;d'
+b'iFlgMG{iDeWT`<+*3qwu8)USgYYhvvFmZ7C~&C`_>0yALS^w)?Z9cH_^Ny<J0E|*?gx~N`3xT?4P'
+b'&L#siTv&l;_-iSaUyjdk1Kc#etbv)jW+Ceh(iZlgn@LQ|~Pa(i<d?A_W1nhAI^|QTXYdM&&G$=5C'
+b'{65-vxz&gcYLaWM};gAJnCvsiNr{2%ZOxtn1(%|L~Xf=ix`NvV1hB`NwbxaCfz*Yz6k79!Jy{&{o'
+b'Nk8CI;{7Wngvi|i;_lt4r$gbgjD>2WCjQ-Y`t4Mal+TCO3(YgIiqfVNS_0l6-!VT^Pi})v2IsHKo'
+b')7%Uo*(UxXgPP~Q3<M(b#EN`iJn(SJ87earjT;=eJ0GybarQn&e^Wl;fKmM^^BOf1Yy^)!l1OHXJ'
+b'Xo9bwtGX;)f=OF>0f(A4-DIAlB1V2Ej=`jN*C)p5^*@@t(!>wTDr~>4T<c%>ltWM+))8oR^UE@8Q'
+b'n7d7kQ{4sxMB<CN;5IiJ}g=Nqn0sZ%nwlP61Z(u#oum(S9FM&R_jsE6_=TL~?KWBM6ius$drTNj?'
+b'Zx^JR-13k#&6MzuWBHA~!LSIUAGvLZJe-Op>o(0Ej9lU8MqAdS;O2g8H#Ss5bI?HxG?rE6PgBF6O'
+b'krm+oE+Wa6c%s&3LldPeE(`BGd$g{Q$WnVxm6S$7!(TJT-jg;QJtLZE2_#H=7Uc|*sXmV{%h~J%{'
+b'V0UYv;^yH5`c4^Mdom;|O#9uYeUDl45jDY*qz+Rw39j7<$9+TaShv=ih=)h)Tsu~_i@p3zFlG1`y'
+b';(lY^~;Y@k8$SW2cwGn)rYS0?v_AAW+Vp*Ko^<Oyl~+@d|RyazA5<<jY6T1q7-$WOe$;#@}~Q_y1'
+b'a!PcTN;wIQ`0#ox^V5Q?SQ<u&Yi4=kAb)EbJzm7+xsG366uAvV2)m!YjchIzJSsqO!E1kJG6zU*N'
+b'3Ywg-I)V2|RGI<v4dudEvt@HU1rysD*jkYoP8sK+h%tX@wyN|u!$phhxafZoEy<rj&&zt7Q`JMj`'
+b'yi@OSwbiOg-uf^#q?3cq$FL<bEN;bT@#|e$ChW(^4Iufw9ja7YqYc>MS6o5R}88jv7MyZt**F5$V'
+b'leDs=%%_{EtteLm{-Yk)yQ_rOTPmR6A|f?NqG-2@-LJz&+Xfu7;ja#={xF2%pmOA3hXD^r_R>u;o'
+b'f=Ar@t6!+m$m(&v4;KFYg2U6`S}I)WiCAZ^dBGb+QTA~oEqPKzqc(Q4FT8VQJTvdcnNtT8)#cR%B'
+b'pQmM@KD(TN|G+@l#f>M-&H4oqRc7{tO=YvD%X7w8axI1(xfN#r9XRG{>r1H@2vzndb3ooGgCDX<Z'
+b'h$K&y*QGiq^`zOQ`A=;L??x$T7?6i%WT(pRQ{6>R?*NXZ6~sLkzG>*dW|B)<Oxi#5No_6PooC0I!'
+b'9>mY>348|~gHEQzn_L5fB%;=qy_=S5P32D>-J@9AF%>M1IQ=B}jUt8nfD_B#HEJwgk6U9@DJCr)i'
+b'(o+A^Jro~wlx@&3Fet-){6k@J3N`@Ka1}9t?`|bG>Lrt6-A=nk1(%L1eJz1`P86y)Rd&YnRUz|MG'
+b'>#}K-rG4!Y>YmKNH=onUC$h`3}$)0lOgRUO2|2SB4?RVJkCPeL_tji!9}&QndPjhZ$*4<QWQ<q#p'
+b'+jKJyhoD;=dd#B>6I$TWwC*5^`0G@;@VDRO}q*X_&H3)KXyxik9GIZ>(mkP@T&D5)&U#K`wQ${0%'
+b'(Yaa^pQ<An5u{~$~vEl#wND4kUowbfU+sek@WtO3MOQJ`6~a@+f~3-1~m)~bA^vsSa`G895p9g9@'
+b'i@;k*^aCOzUEo-yFuH?2-w!H>dRu^t5s~el&Sg7H3LoEeFT#xgwPfizbCr13Di=gNlDXOjk75AX9'
+b'b~g5EmNOaA9`a@qL}h|<C;I6QpCc9c2{VGIR`{sb45#P_c|bCM_n8%PffdeExsB}cppA?!OSz>=L'
+b'0>^5??A-tB$Z*nl@8f0({Wn391Qm%wL0@W65S4sXY4_Ur;1S~GEBE=zm`P4Fky1rAkP~>WeA`(9}'
+b'hP47Zi}b@h;1jmYd~rzq8#zDx4G}nB)J{x`$zuz%AREL@h~+NVPJ|J{q?x_g18S5ioaNNX+3+eI;'
+b'o(sCU%rN5uK_ouX8`(w+92|A<CX1LsxEs}DArL!MK*Qq=GC64p0qZuQL?an=uAr0U%vz3?f!9)5H'
+b'?RI1QpL_!@Yd2(*ey2lk2-8%%9a@FFX^j3#aw=~W;PBIW@qP1rDXni)37I(r$4ppNo>Tevbt~%gl'
+b'vjMq9zB3qgdVZ1b+9K*>2%8zpUs(vMl;z_6x!B!waW2-Jh?SW;urtx=Xgr015D`V#kkQq{JM|MeR'
+b'y^7j()tt}Z*3eL6|4UETGR{8&OH#PgXPa07uf?1t2KqW;ypVC?CmZbqorb20<zt~UcmujH$^_z`)'
+b'61YY{BOH21}`$X5554YV`Ez@lTm3+gVH@xZlBq)@}wyo^n+Ma_YotGhQF`V5-Z~l=`Awr;D;s17m'
+b'RXB)PkPVZiDx=bSlUmxT|riiGj5Xb9#86!wjPc|0%o?>9IiLN1!9Iq-N*P@TQ$KvDU@>o>aR(3BZ'
+b'tn{GCI6|r_(@wTw*LC#WPo(_rU$4vzl8D3UeI60RnuE}Z*B|1Y-A+pI+ZkQ7_1&7j&dxhH1lN$Z9'
+b'peS@XI{ftAv&>Jf;!v|eiw>gqPyhe`D)$&^M-->M00EN|sVD#dwH(@cvBYQl0ssI200dcD')))
