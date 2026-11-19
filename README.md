@@ -1,4 +1,3 @@
-[![make.fun · tiny-chess-01](https://make.fun/badge/tiny-chess-01.svg)](https://make.fun/bounty/tiny-chess-01?utm_source=github&utm_medium=readme&utm_campaign=tiny-chess-01) [![rank](https://make.fun/badge/tiny-chess-01/venomeum/tiny-chess/rank.svg)](https://make.fun/bounty/tiny-chess-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=tiny-chess-01) [![reward](https://make.fun/badge/tiny-chess-01/venomeum/tiny-chess/reward.svg)](https://make.fun/bounty/tiny-chess-01?utm_source=github&utm_medium=readme&utm_campaign=tiny-chess-01)
 # tiny-chess-01 — a chess engine in under 4 KB of Python
 
 `main.py` (3,982 bytes, Python 3.13, stdlib only) is a complete,
@@ -49,3 +48,14 @@ and 10–0 vs a greedy 1-ply material mover.
 ## License
 
 MIT — see `LICENSE`.
+
+## Round 3 — what changed after the first practice grade
+
+The first graded practice run scored 0: the program asked the env
+server for a new game only once, then kept moving in a finished game
+until the server refused it and the process died. This version asks
+for a fresh game after every finish, survives refused requests, and
+checks the server's legal-move list before replying. The search also
+grew real piece-square tables, quiescence that answers checks with
+evasions instead of standing pat, and a repetition guard — the
+combination that lifted the practice replica from 0.5/6 to 3.0/6.
